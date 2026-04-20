@@ -1,4 +1,5 @@
 import { Decimal } from 'decimal.js';
+import { DomainException } from '../../../shared/domain/domain.exception';
 
 export class Account {
   private constructor(
@@ -23,7 +24,7 @@ export class Account {
     const dailyLimit = new Decimal(props.dailyWithdrawalLimit);
     
     if (dailyLimit.isNegative()) {
-      throw new Error('Daily withdrawal limit cannot be negative');
+      throw new DomainException('Daily withdrawal limit cannot be negative');
     }
 
     return new Account(
@@ -81,7 +82,7 @@ export class Account {
    */
   block(): void {
     if (!this._activeFlag) {
-      throw new Error('Account is already blocked');
+      throw new DomainException('Account is already blocked');
     }
     this._activeFlag = false;
   }
@@ -92,12 +93,12 @@ export class Account {
    */
   deposit(amount: number | string | Decimal): void {
     if (!this.isActive) {
-      throw new Error('Cannot deposit into a blocked account');
+      throw new DomainException('Cannot deposit into a blocked account');
     }
     
     const depositAmount = new Decimal(amount);
     if (depositAmount.lte(0)) {
-      throw new Error('Deposit amount must be greater than zero');
+      throw new DomainException('Deposit amount must be greater than zero');
     }
     
     this._balance = this._balance.plus(depositAmount);
@@ -110,22 +111,22 @@ export class Account {
    */
   withdraw(amount: number | string | Decimal, totalWithdrawnToday: number | string | Decimal): void {
     if (!this.isActive) {
-      throw new Error('Cannot withdraw from a blocked account');
+      throw new DomainException('Cannot withdraw from a blocked account');
     }
 
     const withdrawAmount = new Decimal(amount);
     const withdrawnToday = new Decimal(totalWithdrawnToday);
 
     if (withdrawAmount.lte(0)) {
-      throw new Error('Withdrawal amount must be greater than zero');
+      throw new DomainException('Withdrawal amount must be greater than zero');
     }
 
     if (withdrawAmount.gt(this._balance)) {
-      throw new Error('Insufficient balance');
+      throw new DomainException('Insufficient balance');
     }
 
     if (withdrawnToday.plus(withdrawAmount).gt(this._dailyWithdrawalLimit)) {
-      throw new Error('Withdrawal amount exceeds daily limit');
+      throw new DomainException('Withdrawal amount exceeds daily limit');
     }
     
     this._balance = this._balance.minus(withdrawAmount);

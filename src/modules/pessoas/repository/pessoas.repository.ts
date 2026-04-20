@@ -36,6 +36,17 @@ export class PessoasRepository {
     });
   }
 
+  /**
+   * Checks if a Person exists in the database by ID.
+   * Optimized query that only returns a boolean, not the full record.
+   */
+  async checkIfExists(personId: number): Promise<boolean> {
+    const count = await this.prisma.pessoa.count({
+      where: { personId },
+    });
+    return count > 0;
+  }
+
   async create(pessoa: Omit<Pessoa, 'personId'>): Promise<Pessoa> {
     const createdModel = await this.prisma.pessoa.create({
       data: {

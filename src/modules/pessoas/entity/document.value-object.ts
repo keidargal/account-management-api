@@ -1,3 +1,5 @@
+import { DomainException } from '../../../shared/domain/domain.exception';
+
 export class Document {
   private constructor(public readonly value: string) {}
 
@@ -11,7 +13,7 @@ export class Document {
     
     // Basic validation (e.g., must have at least 9 digits)
     if (!cleanValue || cleanValue.length < 9) {
-      throw new Error('Invalid document format. Must contain at least 9 digits.');
+      throw new DomainException('Invalid document format. Must contain at least 9 digits.');
     }
 
     return new Document(cleanValue);

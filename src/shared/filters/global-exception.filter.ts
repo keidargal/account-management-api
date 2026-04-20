@@ -7,6 +7,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
+import { DomainException } from '../domain/domain.exception';
 
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
@@ -23,6 +24,10 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     if (exception instanceof HttpException) {
       status = exception.getStatus();
       message = exception.getResponse();
+    } else if (exception instanceof DomainException) {
+      // Automatically map Domain Exceptions to 400 Bad Request
+      status = HttpStatus.BAD_REQUEST;
+      message = exception.message;
     } else if (exception instanceof Error) {
       message = exception.message;
     }

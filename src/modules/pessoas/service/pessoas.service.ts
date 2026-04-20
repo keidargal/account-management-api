@@ -15,18 +15,15 @@ export class PessoasService {
       throw new BadRequestException('Person with this document already exists');
     }
 
-    // Create the entity (this will validate the document format via the Value Object)
-    let pessoaEntity: Pessoa;
-    try {
-      pessoaEntity = Pessoa.create({
-        personId: 0, // 0 because it's not created yet, DB will assign real ID
-        name: data.name,
-        document: data.document,
-        birthDate: data.birthDate,
-      });
-    } catch (error: any) {
-      throw new BadRequestException(error.message);
-    }
+    // Create the entity
+    // We don't need a try-catch here anymore because DomainException 
+    // is automatically handled by the GlobalExceptionFilter!
+    const pessoaEntity = Pessoa.create({
+      personId: 0, // 0 because it's not created yet, DB will assign real ID
+      name: data.name,
+      document: data.document,
+      birthDate: data.birthDate,
+    });
 
     // Persist to DB
     return this.pessoasRepository.create(pessoaEntity);
@@ -40,5 +37,12 @@ export class PessoasService {
     }
 
     return pessoa;
+  }
+
+  /**
+   * Fast check if a person exists without loading the full entity.
+   */
+  async checkIfExists(personId: number): Promise<boolean> {
+    return this.pessoasRepository.checkIfExists(personId);
   }
 }
