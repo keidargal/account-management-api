@@ -4,5 +4,44 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+}
+
+model Pessoa {
+  personId  Int      @id @default(autoincrement())
+  name      String
+  document  String   @unique
+  birthDate DateTime
+
+  accounts Account[]
+
+  @@map("pessoas")
+}
+
+model Account {
+  accountId             Int      @id @default(autoincrement())
+  personId              Int
+  balance               Decimal  @db.Decimal(19, 4)
+  dailyWithdrawealLimit Decimal  @db.Decimal(19, 4)
+  activeFlag            Boolean  @default(true)
+  accountType           Int
+  createDate            DateTime @default(now())
+
+  pessoa       Pessoa        @relation(fields: [personId], references: [personId])
+  transactions Transaction[]
+
+  @@map("accounts")
+}
+
+model Transaction {
+  transactionId   Int      @id @default(autoincrement())
+  accountId       Int
+  value           Decimal  @db.Decimal(19, 4)
+  transactionDate DateTime @default(now())
+
+  account Account @relation(fields: [accountId], references: [accountId])
+
+  @@index([accountId])
+  @@index([transactionDate])
+  @@index([accountId, transactionDate])
+  @@map("transactions")
 }
