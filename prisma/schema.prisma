@@ -7,27 +7,27 @@ datasource db {
 }
 
 model Pessoa {
-  personId  Int      @id @default(autoincrement())
+  personId  Int       @id @default(autoincrement())
   name      String
-  document  String   @unique
+  document  String    @unique
   birthDate DateTime
-
-  accounts Account[]
+  
+  accounts  Account[]
 
   @@map("pessoas")
 }
 
 model Account {
-  accountId             Int      @id @default(autoincrement())
+  accountId             Int           @id @default(autoincrement())
   personId              Int
-  balance               Decimal  @db.Decimal(19, 4)
-  dailyWithdrawealLimit Decimal  @db.Decimal(19, 4)
-  activeFlag            Boolean  @default(true)
+  balance               Decimal       @db.Decimal(19, 4)
+  dailyWithdrawealLimit Decimal       @db.Decimal(19, 4)
+  activeFlag            Boolean       @default(true)
   accountType           Int
-  createDate            DateTime @default(now())
-
-  pessoa       Pessoa        @relation(fields: [personId], references: [personId])
-  transactions Transaction[]
+  createDate            DateTime      @default(now())
+  
+  pessoa                Pessoa        @relation(fields: [personId], references: [personId])
+  transactions          Transaction[]
 
   @@map("accounts")
 }
@@ -38,10 +38,11 @@ model Transaction {
   value           Decimal  @db.Decimal(19, 4)
   transactionDate DateTime @default(now())
 
-  account Account @relation(fields: [accountId], references: [accountId])
+  account         Account  @relation(fields: [accountId], references: [accountId])
 
   @@index([accountId])
   @@index([transactionDate])
   @@index([accountId, transactionDate])
+  
   @@map("transactions")
 }
