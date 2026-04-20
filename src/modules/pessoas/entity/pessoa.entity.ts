@@ -1,4 +1,4 @@
-import { Document } from './value-objects/document.value-object';
+import { Document } from './document.value-object';
 
 export class Pessoa {
   constructor(
