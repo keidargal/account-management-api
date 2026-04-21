@@ -10,7 +10,7 @@ export class PessoaResponseDto {
   name: string;
 
   @Expose()
-  @Transform(({ obj }) => obj.document.value)
+  @Transform(({ obj }: { obj: Pessoa }) => obj.document.value)
   document: string;
 
   @Expose()

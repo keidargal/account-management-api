@@ -114,7 +114,7 @@ describe('AccountsService (Application)', () => {
     it('should block and persist', async () => {
       const account = activeAccount();
       accountsRepository.findById.mockResolvedValue(account);
-      accountsRepository.update.mockImplementation(async (a) => a);
+      accountsRepository.update.mockImplementation((a) => Promise.resolve(a));
 
       const result = await service.blockAccount(10);
 
