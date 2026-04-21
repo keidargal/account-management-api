@@ -1,100 +1,150 @@
-# account-management-api
+# Account Management API
 
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+REST API for managing people (`Pessoa`), bank accounts, and financial transactions. Built with **NestJS**, **TypeScript**, **Prisma 6**, and **PostgreSQL**, with a modular layout and domain rules enforced in entities and transactional persistence.
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+## Stack
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+| Layer | Technology |
+|--------|------------|
+| Runtime | Node.js |
+| Framework | NestJS 11 |
+| ORM | Prisma 6 (`@prisma/client`) |
+| Database | PostgreSQL 15 (Docker image in `docker-compose.yml`) |
+| Validation | `class-validator` / `class-transformer` |
+| Money | `decimal.js` in the domain layer; `Decimal` in Prisma |
 
-## Description
+## Architecture (high level)
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+- **Feature modules** under `src/modules/` (`pessoas`, `accounts`, `transactions`): each exposes controllers, application services (use cases), Prisma repositories, and domain entities where business rules live.
+- **Shared** code: global exception filter (`DomainException` maps to HTTP 400), `PrismaService` extending `PrismaClient`.
+- **Financial safety**: money-moving paths use Prisma interactive transactions and relative balance updates to reduce race conditions; daily withdrawal totals use UTC day boundaries for queries.
 
-## Project setup
-
-```bash
-$ npm install
+```text
+HTTP (DTO validation) → Controller → Service → Repository (Prisma) / Domain entity
 ```
 
-## Compile and run the project
+## Prerequisites
+
+- Node.js (LTS recommended)
+- npm
+- Docker (or a local PostgreSQL instance you can point `DATABASE_URL` at)
+
+## Environment variables
+
+1. Copy `.env.example` to `.env` at the project root.
+2. Adjust `DB_*` if you change Docker credentials or port.
+3. `DATABASE_URL` must match your PostgreSQL instance (Prisma reads it from `prisma/schema.prisma`).
+
+For **integration tests**, copy `.env.test.example` to `.env.test` and use a **separate database** (e.g. `account_management_test`). Never point tests at production data.
+
+## Database setup (local)
+
+### Option A: Docker Compose
+
+From the project root (with `.env` loaded so `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `DB_PORT` are set):
 
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+docker compose up -d
 ```
 
-## Run tests
+Create / update `DATABASE_URL` in `.env` so it matches the running container (see `.env.example`).
+
+### Option B: Existing PostgreSQL
+
+Set `DATABASE_URL` in `.env` to your server and database name.
+
+### Migrations and seed
 
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+npx prisma migrate deploy
+npx prisma db seed
 ```
 
-## Deployment
+- **Migrations** live in `prisma/migrations/`.
+- **Seed** creates at least one default `Pessoa` (see `prisma/seed/seed.ts`).
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+For the **test database** used by integration tests:
 
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+# Example: set DATABASE_URL to your test DB, then:
+npx prisma migrate deploy
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+## Run the application
 
-## Resources
+```bash
+npm install
+npm run start:dev
+```
 
-Check out a few resources that may come in handy when working with NestJS:
+Default HTTP port: **3000** (or `PORT` if set).
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+## API overview
 
-## Support
+Base URL: `http://localhost:3000` (unless configured otherwise).
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/pessoas` | Create a person |
+| `GET` | `/pessoas/:id` | Get person by id |
+| `POST` | `/accounts` | Create account for a person |
+| `GET` | `/accounts/:accountId/balance` | Account balance |
+| `PATCH` | `/accounts/:accountId/block` | Block account |
+| `POST` | `/transactions/deposit` | Deposit |
+| `POST` | `/transactions/withdraw` | Withdraw |
+| `GET` | `/transactions/statement/:accountId` | Statement (optional period) |
 
-## Stay in touch
+### Request bodies (JSON)
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+**Create person** `POST /pessoas`
+
+- `name` (string)
+- `document` (string; validated via domain rules / length)
+- `birthDate` (ISO date string)
+
+**Create account** `POST /accounts`
+
+- `personId` (integer)
+- `dailyWithdrawalLimit` (integer, ≥ 0)
+- `accountType` (integer)
+
+**Deposit / withdraw** `POST /transactions/deposit` | `withdraw`
+
+- `accountId` (integer)
+- `value` (positive number, up to 4 decimal places)
+
+**Statement** `GET /transactions/statement/:accountId`
+
+- Query (optional): `fromDate`, `toDate` (ISO date strings). If omitted, sensible defaults apply (wide range / “until now”).
+
+### Responses
+
+Success responses use response DTOs with `class-transformer` where applicable. Business rule failures typically return **400** with a JSON body from the global exception filter; validation errors follow Nest’s validation pipe behavior.
+
+## Business rules (summary)
+
+- Deposits and withdrawals are rejected for **blocked** accounts.
+- Withdrawals require **sufficient balance** and respect a **daily withdrawal limit** (computed from same-day withdrawal totals in UTC).
+- Statement can be constrained by **date range**; invalid ranges (e.g. `fromDate` after `toDate`) are rejected.
+
+## Testing
+
+| Command | What it runs |
+|---------|----------------|
+| `npm test` | Unit tests (`*.spec.ts` under `src/`) |
+| `npm run test:e2e` | End-to-end tests against the app; expects `.env` with `DATABASE_URL` (see `test/jest-e2e.json` + `test/dotenv-config.ts`) |
+| `npm run test:integration` | Integration tests against a **test** DB; requires `.env.test` (see `test/jest-integration.json` + `test/dotenv-test.ts`) |
+| `npm run test:cov` | Unit test coverage |
+
+- E2E and integration suites reset data between tests using helpers under `test/helpers/` (delete order respects foreign keys).
+- Integration tests should use a **dedicated database** configured in `.env.test`.
+
+## Assumptions
+
+- Amounts are handled with sufficient precision for the exercise (`Decimal` / `decimal.js`); currency is not modeled as a separate concept.
+- Dates for limits and statements use **UTC** in persistence queries to avoid ambiguous “today” semantics.
+- Authentication and authorization are out of scope unless added later.
 
 ## License
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+UNLICENSED (private project).
