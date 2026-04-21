@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { PessoasRepository } from '../repository/pessoas.repository';
 import { Pessoa } from '../entity/pessoa.entity';
+import { Document } from '../entity/document.value-object';
 
 @Injectable()
 export class PessoasService {
@@ -15,25 +16,29 @@ export class PessoasService {
     document: string;
     birthDate: Date;
   }): Promise<Pessoa> {
-    // Check if document already exists
+    // 1. Let the Value Object handle normalization and validation
+    // Throws DomainException if invalid before hitting the DB
+    const documentVo = Document.create(data.document);
+
+    // 2. Check if document already exists using the normalized value
     const existingPessoa = await this.pessoasRepository.findByDocument(
-      data.document,
+      documentVo.value,
     );
     if (existingPessoa) {
       throw new BadRequestException('Person with this document already exists');
     }
 
-    // Create the entity
+    // 3. Create the entity using the normalized value
     // We don't need a try-catch here anymore because DomainException
     // is automatically handled by the GlobalExceptionFilter!
     const pessoaEntity = Pessoa.create({
       personId: 0, // 0 because it's not created yet, DB will assign real ID
       name: data.name,
-      document: data.document,
+      document: documentVo.value,
       birthDate: data.birthDate,
     });
 
-    // Persist to DB
+    // 4. Persist to DB
     return this.pessoasRepository.create(pessoaEntity);
   }
 
