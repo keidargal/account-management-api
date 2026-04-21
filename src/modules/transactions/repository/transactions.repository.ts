@@ -1,9 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../shared/infrastructure/prisma/prisma.service';
 import { Transaction } from '../entity/transaction.entity';
-import { Transaction as PrismaTransaction } from '@prisma/client';
+import { Prisma, PrismaClient, Transaction as PrismaTransaction } from '@prisma/client';
 import { Decimal } from 'decimal.js';
 import { DomainException } from '../../../shared/domain/domain.exception';
+import { Account } from '../../accounts/entity/account.entity';
 
 @Injectable()
 export class TransactionsRepository {
@@ -21,40 +22,58 @@ export class TransactionsRepository {
     });
   }
 
-  /**
-   * Calculates the total amount withdrawn from an account TODAY (UTC).
-   * Crucial for enforcing the daily withdrawal limit business rule.
-   */
-  async getTotalWithdrawnToday(accountId: number): Promise<Decimal> {
-    const now = new Date();
-    // Calculate the start of the current day in UTC to avoid timezone bugs
-    const startOfTodayUTC = new Date(Date.UTC(
-      now.getUTCFullYear(),
-      now.getUTCMonth(),
-      now.getUTCDate(),
-      0, 0, 0, 0
-    ));
+  /** Start of calendar day in UTC (used for daily withdrawal totals). */
+  private startOfTodayUtc(referenceDate: Date = new Date()): Date {
+    return new Date(
+      Date.UTC(
+        referenceDate.getUTCFullYear(),
+        referenceDate.getUTCMonth(),
+        referenceDate.getUTCDate(),
+        0,
+        0,
+        0,
+        0,
+      ),
+    );
+  }
 
-    // Aggregate all negative transactions (withdrawals) for today
-    const result = await this.prisma.transaction.aggregate({
+  /**
+   * Total amount withdrawn today (absolute value), for the given DB client.
+   * Must run inside the same interactive transaction as the withdrawal when enforcing limits.
+   */
+  private async sumWithdrawalsToday(
+    db: Pick<PrismaClient, 'transaction'>,
+    accountId: number,
+    startOfTodayUTC: Date,
+  ): Promise<Decimal> {
+    const result = await db.transaction.aggregate({
       where: {
         accountId,
-        transactionDate: {
-          gte: startOfTodayUTC, // Safe UTC date comparison
-        },
-        value: {
-          lt: 0, // Only withdrawals (negative values)
-        },
+        transactionDate: { gte: startOfTodayUTC },
+        value: { lt: 0 },
       },
-      _sum: {
-        value: true,
-      },
+      _sum: { value: true },
     });
 
-    // The sum will be negative (e.g., -150). We return the absolute value (150)
-    // so the Account entity can easily compare it against the daily limit.
     const sum = result._sum.value ? new Decimal(result._sum.value) : new Decimal(0);
     return sum.abs();
+  }
+
+  /**
+   * Calculates the total amount withdrawn from an account TODAY (UTC).
+   * Crucial for read-only reporting; authoritative enforcement happens in {@link executeFinancialOperation}.
+   */
+  async getTotalWithdrawnToday(accountId: number): Promise<Decimal> {
+    return this.sumWithdrawalsToday(this.prisma, accountId, this.startOfTodayUtc());
+  }
+
+  /** Serializes financial operations per account row (PostgreSQL). */
+  private async lockAccountForUpdate(tx: Prisma.TransactionClient, accountId: number): Promise<void> {
+    await tx.$queryRaw(
+      Prisma.sql`
+        SELECT 1 FROM "accounts" WHERE "accountId" = ${accountId} FOR UPDATE
+      `,
+    );
   }
 
   /**
@@ -92,11 +111,14 @@ export class TransactionsRepository {
   async executeFinancialOperation(transaction: Transaction): Promise<Transaction> {
     // Interactive Transaction ensures all read/write operations happen in an isolated, locked context
     return this.prisma.$transaction(async (tx) => {
-      
-      // 1. Fetch the latest account state directly within the transaction lock
+      const startOfTodayUTC = this.startOfTodayUtc(new Date());
+
+      // 1. Lock the account row so concurrent withdrawals serialize (balance + daily limit stay consistent)
+      await this.lockAccountForUpdate(tx, transaction.accountId);
+
+      // 2. Load full account row after the lock (same snapshot as the daily withdrawal sum)
       const currentAccount = await tx.account.findUnique({
         where: { accountId: transaction.accountId },
-        select: { balance: true, activeFlag: true },
       });
 
       if (!currentAccount) {
@@ -107,18 +129,22 @@ export class TransactionsRepository {
         throw new DomainException('Account is blocked. Cannot execute transaction.');
       }
 
-      // 2. If it's a withdrawal, verify sufficient funds at this exact millisecond
+      // 3. Withdrawals: recompute today's withdrawals inside this tx, then reuse Account domain rules
       if (transaction.isWithdrawal()) {
-        const currentBalance = new Decimal(currentAccount.balance);
-        // transaction.value is negative for withdrawals, so we add it to the balance
-        const newBalance = currentBalance.plus(transaction.value); 
-
-        if (newBalance.isNegative()) {
-          throw new DomainException('Insufficient balance (prevented by database transaction lock)');
-        }
+        const withdrawnToday = await this.sumWithdrawalsToday(tx, transaction.accountId, startOfTodayUTC);
+        const domainAccount = Account.load({
+          accountId: currentAccount.accountId,
+          personId: currentAccount.personId,
+          balance: currentAccount.balance,
+          dailyWithdrawalLimit: currentAccount.dailyWithdrawealLimit,
+          activeFlag: currentAccount.activeFlag,
+          accountType: currentAccount.accountType,
+          createDate: currentAccount.createDate,
+        });
+        domainAccount.withdraw(transaction.value.negated(), withdrawnToday);
       }
 
-      // 3. Record the transaction history
+      // 4. Record the transaction history
       const createdTransactionModel = await tx.transaction.create({
         data: {
           accountId: transaction.accountId,
@@ -127,7 +153,7 @@ export class TransactionsRepository {
         },
       });
       
-      // 4. Update the account balance RELATIVELY (Increment/Decrement)
+      // 5. Update the account balance RELATIVELY (Increment/Decrement)
       await tx.account.update({
         where: { accountId: transaction.accountId },
         data: {

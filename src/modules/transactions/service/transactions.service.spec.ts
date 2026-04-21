@@ -11,10 +11,7 @@ import { DomainException } from '../../../shared/domain/domain.exception';
 describe('TransactionsService (Application)', () => {
   let service: TransactionsService;
   let transactionsRepository: jest.Mocked<
-    Pick<
-      TransactionsRepository,
-      'executeFinancialOperation' | 'getTotalWithdrawnToday' | 'getStatement'
-    >
+    Pick<TransactionsRepository, 'executeFinancialOperation' | 'getStatement'>
   >;
   let accountsRepository: jest.Mocked<Pick<AccountsRepository, 'findById'>>;
 
@@ -31,13 +28,9 @@ describe('TransactionsService (Application)', () => {
 
   beforeEach(async () => {
     const mockTransactions: jest.Mocked<
-      Pick<
-        TransactionsRepository,
-        'executeFinancialOperation' | 'getTotalWithdrawnToday' | 'getStatement'
-      >
+      Pick<TransactionsRepository, 'executeFinancialOperation' | 'getStatement'>
     > = {
       executeFinancialOperation: jest.fn(),
-      getTotalWithdrawnToday: jest.fn(),
       getStatement: jest.fn(),
     };
     const mockAccounts: jest.Mocked<Pick<AccountsRepository, 'findById'>> = {
@@ -93,11 +86,8 @@ describe('TransactionsService (Application)', () => {
       await expect(service.withdraw(1, 10)).rejects.toThrow(NotFoundException);
     });
 
-    it('should load daily withdrawn total then persist', async () => {
+    it('should persist withdrawal via financial operation', async () => {
       accountsRepository.findById.mockResolvedValue(activeAccount());
-      transactionsRepository.getTotalWithdrawnToday.mockResolvedValue(
-        new Decimal(100),
-      );
       transactionsRepository.executeFinancialOperation.mockResolvedValue(
         Transaction.load({
           transactionId: 2,
@@ -109,30 +99,17 @@ describe('TransactionsService (Application)', () => {
 
       await service.withdraw(1, 50);
 
-      expect(transactionsRepository.getTotalWithdrawnToday).toHaveBeenCalledWith(1);
       expect(transactionsRepository.executeFinancialOperation).toHaveBeenCalledTimes(1);
     });
 
-    it('should not persist when domain rules reject the withdrawal', async () => {
-      accountsRepository.findById.mockResolvedValue(
-        Account.load({
-          accountId: 1,
-          personId: 1,
-          balance: new Decimal(10),
-          dailyWithdrawalLimit: new Decimal(500),
-          activeFlag: true,
-          accountType: 1,
-          createDate: new Date(),
-        }),
-      );
-      transactionsRepository.getTotalWithdrawnToday.mockResolvedValue(
-        new Decimal(0),
+    it('should propagate DomainException when the repository rejects the withdrawal', async () => {
+      accountsRepository.findById.mockResolvedValue(activeAccount());
+      transactionsRepository.executeFinancialOperation.mockRejectedValue(
+        new DomainException('Insufficient balance'),
       );
 
       await expect(service.withdraw(1, 999)).rejects.toThrow(DomainException);
-      expect(
-        transactionsRepository.executeFinancialOperation,
-      ).not.toHaveBeenCalled();
+      expect(transactionsRepository.executeFinancialOperation).toHaveBeenCalledTimes(1);
     });
   });
 

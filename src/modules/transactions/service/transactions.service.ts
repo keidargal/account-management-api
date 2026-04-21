@@ -46,21 +46,12 @@ export class TransactionsService {
    * Use Case: Withdraw money from an account
    */
   async withdraw(accountId: number, amount: number): Promise<Transaction> {
-    // 1. Fetch the account to ensure it exists
-    const account = await this.getAccountOrThrow(accountId);
+    // Existence check for a clear 404; balance, daily limit, and blocked state are enforced
+    // inside executeFinancialOperation under a row lock + single DB transaction.
+    await this.getAccountOrThrow(accountId);
 
-    // 2. Fetch the total amount withdrawn today to enforce the daily limit
-    const withdrawnToday = await this.transactionsRepository.getTotalWithdrawnToday(accountId);
-
-    // 3. Domain Validation: Let the Account entity validate the withdrawal
-    // (Checks if blocked, checks sufficient balance, checks daily limit)
-    account.withdraw(amount, withdrawnToday);
-
-    // 4. Create the Transaction Domain Entity
-    // (Validates that the input amount is positive, then converts it to negative internally)
     const transaction = Transaction.createWithdrawal({ accountId, amount });
 
-    // 5. Persist safely using the Database Transaction
     return this.transactionsRepository.executeFinancialOperation(transaction);
   }
 
