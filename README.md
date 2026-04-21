@@ -31,11 +31,17 @@ HTTP (DTO validation) → Controller → Service → Repository (Prisma) / Domai
 
 ## Environment variables
 
-1. Copy `.env.example` to `.env` at the project root.
-2. Adjust `DB_*` if you change Docker credentials or port.
-3. `DATABASE_URL` must match your PostgreSQL instance (Prisma reads it from `prisma/schema.prisma`).
+The repository includes **`.env.example`** (safe defaults for local development). Copy it to **`.env`** and change values as needed. **`.env` is gitignored** and must not be committed.
 
-For **integration tests**, copy `.env.test.example` to `.env.test` and use a **separate database** (e.g. `account_management_test`). Never point tests at production data.
+| Variable | Purpose |
+|----------|---------|
+| `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `DB_PORT` | Consumed by `docker-compose.yml` for the Postgres service. |
+| `DATABASE_URL` | Connection string for **Prisma** (`prisma/schema.prisma`) and the running API. Must match the database you actually use (host, port, database name, credentials). |
+| `PORT` | (Optional) HTTP port; defaults to **3000** if unset (`src/main.ts`). |
+
+Keep `DATABASE_URL` consistent with Docker: if you change `DB_*` or the mapped port, update `DATABASE_URL` accordingly.
+
+For **integration tests**, copy **`.env.test.example`** to **`.env.test`** and point `DATABASE_URL` at a **separate database** (for example `account_management_test`). Never run integration tests against production data.
 
 ## Database setup (local)
 
