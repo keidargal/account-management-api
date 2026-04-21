@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, Param, ParseIntPipe, UseInterceptors, ClassSerializerInterceptor } from '@nestjs/common';
+import { Controller, Post, Body, Get, Param, ParseIntPipe, UseInterceptors, ClassSerializerInterceptor, HttpCode, HttpStatus } from '@nestjs/common';
 import { PessoasService } from '../service/pessoas.service';
 import { CreatePessoaDto } from '../dto/create-pessoa.dto';
 import { PessoaResponseDto } from '../dto/pessoa-response.dto';
@@ -11,6 +11,7 @@ export class PessoasController {
   ) {}
 
   @Post()
+  @HttpCode(HttpStatus.CREATED)
   async create(@Body() createPessoaDto: CreatePessoaDto): Promise<PessoaResponseDto> {
     const pessoa = await this.pessoasService.createPessoa({
       name: createPessoaDto.name,

@@ -44,7 +44,7 @@ describe('Account flows (integration)', () => {
         document: uniqueDocument(),
         birthDate: '1990-01-15T00:00:00.000Z',
       })
-      .expect(200);
+      .expect(201);
 
     const { body: account } = await http
       .post('/accounts')

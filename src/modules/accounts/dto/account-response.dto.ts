@@ -1,4 +1,4 @@
-import { Exclude, Expose, Transform } from 'class-transformer';
+import { Exclude, Expose } from 'class-transformer';
 import { Account } from '../entity/account.entity';
 
 @Exclude()
@@ -10,11 +10,9 @@ export class AccountResponseDto {
   personId: number;
 
   @Expose()
-  @Transform(({ obj }) => obj.balance.toNumber())
   balance: number;
 
   @Expose()
-  @Transform(({ obj }) => obj.dailyWithdrawalLimit.toNumber())
   dailyWithdrawalLimit: number;
 
   @Expose()
@@ -26,7 +24,13 @@ export class AccountResponseDto {
   @Expose()
   createDate: Date;
 
-  constructor(partial: Partial<Account>) {
-    Object.assign(this, partial);
+  constructor(account: Account) {
+    this.accountId = account.accountId;
+    this.personId = account.personId;
+    this.balance = account.balance.toNumber();
+    this.dailyWithdrawalLimit = account.dailyWithdrawalLimit.toNumber();
+    this.activeFlag = account.isActive;
+    this.accountType = account.accountType;
+    this.createDate = account.createDate;
   }
 }

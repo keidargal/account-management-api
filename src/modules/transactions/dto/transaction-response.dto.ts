@@ -1,4 +1,4 @@
-import { Exclude, Expose, Transform } from 'class-transformer';
+import { Exclude, Expose } from 'class-transformer';
 import { Transaction } from '../entity/transaction.entity';
 
 @Exclude()
@@ -10,13 +10,15 @@ export class TransactionResponseDto {
   accountId: number;
 
   @Expose()
-  @Transform(({ obj }) => obj.value.toNumber())
   value: number;
 
   @Expose()
   transactionDate: Date;
 
-  constructor(partial: Partial<Transaction>) {
-    Object.assign(this, partial);
+  constructor(transaction: Transaction) {
+    this.transactionId = transaction.transactionId;
+    this.accountId = transaction.accountId;
+    this.value = transaction.value.toNumber();
+    this.transactionDate = transaction.transactionDate;
   }
 }

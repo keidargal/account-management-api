@@ -41,7 +41,7 @@ describe('Account management (e2e)', () => {
         document: uniqueDocument(),
         birthDate: '1990-06-15T00:00:00.000Z',
       })
-      .expect(200);
+      .expect(201);
 
     const personId = createPessoaRes.body.personId as number;
     expect(personId).toBeGreaterThan(0);
@@ -107,7 +107,7 @@ describe('Account management (e2e)', () => {
         document: uniqueDocument(),
         birthDate: '1991-01-01T00:00:00.000Z',
       })
-      .expect(200);
+      .expect(201);
 
     const { body: account } = await http
       .post('/accounts')
@@ -139,7 +139,7 @@ describe('Account management (e2e)', () => {
         document: uniqueDocument(),
         birthDate: '1992-01-01T00:00:00.000Z',
       })
-      .expect(200);
+      .expect(201);
 
     const { body: account } = await http
       .post('/accounts')
