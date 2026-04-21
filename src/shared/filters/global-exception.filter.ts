@@ -7,6 +7,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
+import { Prisma } from '@prisma/client';
 import { DomainException } from '../domain/domain.exception';
 
 @Catch()
@@ -28,6 +29,28 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       // Automatically map Domain Exceptions to 400 Bad Request
       status = HttpStatus.BAD_REQUEST;
       message = exception.message;
+    } else if (exception instanceof Prisma.PrismaClientKnownRequestError) {
+      // Handle Prisma-specific database errors gracefully
+      switch (exception.code) {
+        case 'P2002': // Unique constraint failed
+          status = HttpStatus.CONFLICT; // 409 Conflict is semantically correct for duplicates
+          const target = (exception.meta?.target as string[])?.join(', ') || 'field';
+          message = `Unique constraint failed on ${target}. The record already exists.`;
+          break;
+        case 'P2003': // Foreign key constraint failed
+          status = HttpStatus.BAD_REQUEST;
+          const field_name = exception.meta?.field_name || 'field';
+          message = `Foreign key constraint failed on ${field_name}. The referenced record does not exist.`;
+          break;
+        case 'P2025': // Record not found
+          status = HttpStatus.NOT_FOUND;
+          message = exception.meta?.cause || 'Record not found';
+          break;
+        default:
+          status = HttpStatus.BAD_REQUEST;
+          message = 'A database error occurred while processing the request.';
+          break;
+      }
     } else if (exception instanceof Error) {
       message = exception.message;
     }
