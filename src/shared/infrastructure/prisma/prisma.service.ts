@@ -1,14 +1,12 @@
 import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 
+/**
+ * Standard Prisma 6 client: connection string comes from DATABASE_URL (see prisma/schema.prisma).
+ * No driver adapter — keeps the stack simple and matches typical Nest + Prisma deployments.
+ */
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
-  constructor() {
-    super({
-      datasourceUrl: process.env.DATABASE_URL,
-    } as any);
-  }
-
   async onModuleInit() {
     await this.$connect();
   }
