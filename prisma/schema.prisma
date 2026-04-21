@@ -22,7 +22,7 @@ model Account {
   accountId             Int           @id @default(autoincrement())
   personId              Int
   balance               Decimal       @db.Decimal(19, 4)
-  dailyWithdrawealLimit Decimal       @db.Decimal(19, 4)
+  dailyWithdrawalLimit Decimal       @db.Decimal(19, 4)
   activeFlag            Boolean       @default(true)
   accountType           Int
   createDate            DateTime      @default(now())

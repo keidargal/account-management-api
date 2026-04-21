@@ -16,7 +16,7 @@ export class AccountsRepository {
       accountId: model.accountId,
       personId: model.personId,
       balance: model.balance,
-      dailyWithdrawalLimit: model.dailyWithdrawealLimit,
+      dailyWithdrawalLimit: model.dailyWithdrawalLimit,
       activeFlag: model.activeFlag,
       accountType: model.accountType,
       createDate: model.createDate,
@@ -31,7 +31,7 @@ export class AccountsRepository {
       data: {
         personId: account.personId,
         balance: account.balance, // Prisma automatically handles Decimal.js
-        dailyWithdrawealLimit: account.dailyWithdrawalLimit, // Note: using the exact schema field name
+        dailyWithdrawalLimit: account.dailyWithdrawalLimit, // Note: using the exact schema field name
         activeFlag: account.isActive,
         accountType: account.accountType,
         createDate: account.createDate,

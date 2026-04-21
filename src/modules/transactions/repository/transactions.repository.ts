@@ -136,7 +136,7 @@ export class TransactionsRepository {
           accountId: currentAccount.accountId,
           personId: currentAccount.personId,
           balance: currentAccount.balance,
-          dailyWithdrawalLimit: currentAccount.dailyWithdrawealLimit,
+          dailyWithdrawalLimit: currentAccount.dailyWithdrawalLimit,
           activeFlag: currentAccount.activeFlag,
           accountType: currentAccount.accountType,
           createDate: currentAccount.createDate,
