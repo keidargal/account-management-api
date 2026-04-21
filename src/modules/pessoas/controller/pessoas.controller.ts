@@ -1,4 +1,15 @@
-import { Controller, Post, Body, Get, Param, ParseIntPipe, UseInterceptors, ClassSerializerInterceptor, HttpCode, HttpStatus } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Get,
+  Param,
+  ParseIntPipe,
+  UseInterceptors,
+  ClassSerializerInterceptor,
+  HttpCode,
+  HttpStatus,
+} from '@nestjs/common';
 import { PessoasService } from '../service/pessoas.service';
 import { CreatePessoaDto } from '../dto/create-pessoa.dto';
 import { PessoaResponseDto } from '../dto/pessoa-response.dto';
@@ -6,13 +17,13 @@ import { PessoaResponseDto } from '../dto/pessoa-response.dto';
 @Controller('pessoas')
 @UseInterceptors(ClassSerializerInterceptor)
 export class PessoasController {
-  constructor(
-    private readonly pessoasService: PessoasService,
-  ) {}
+  constructor(private readonly pessoasService: PessoasService) {}
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  async create(@Body() createPessoaDto: CreatePessoaDto): Promise<PessoaResponseDto> {
+  async create(
+    @Body() createPessoaDto: CreatePessoaDto,
+  ): Promise<PessoaResponseDto> {
     const pessoa = await this.pessoasService.createPessoa({
       name: createPessoaDto.name,
       document: createPessoaDto.document,
@@ -23,9 +34,11 @@ export class PessoasController {
   }
 
   @Get(':id')
-  async findOne(@Param('id', ParseIntPipe) id: number): Promise<PessoaResponseDto> {
+  async findOne(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<PessoaResponseDto> {
     const pessoa = await this.pessoasService.getPessoa(id);
-    
+
     return new PessoaResponseDto(pessoa);
   }
 }

@@ -67,7 +67,9 @@ describe('Account flows (integration)', () => {
       .send({ accountId, value: 100 })
       .expect(201);
 
-    const balanceRes = await http.get(`/accounts/${accountId}/balance`).expect(200);
+    const balanceRes = await http
+      .get(`/accounts/${accountId}/balance`)
+      .expect(200);
     expect(balanceRes.body.balance).toBe(100);
 
     const row = await prisma.account.findUnique({ where: { accountId } });
@@ -83,10 +85,18 @@ describe('Account flows (integration)', () => {
     const http = request(app.getHttpServer());
     const { accountId } = await createPersonAndAccount(10_000);
 
-    await http.post('/transactions/deposit').send({ accountId, value: 200 }).expect(201);
-    await http.post('/transactions/withdraw').send({ accountId, value: 50 }).expect(201);
+    await http
+      .post('/transactions/deposit')
+      .send({ accountId, value: 200 })
+      .expect(201);
+    await http
+      .post('/transactions/withdraw')
+      .send({ accountId, value: 50 })
+      .expect(201);
 
-    const balanceRes = await http.get(`/accounts/${accountId}/balance`).expect(200);
+    const balanceRes = await http
+      .get(`/accounts/${accountId}/balance`)
+      .expect(200);
     expect(balanceRes.body.balance).toBe(150);
 
     const txs = await prisma.transaction.findMany({
@@ -101,7 +111,10 @@ describe('Account flows (integration)', () => {
     const http = request(app.getHttpServer());
     const { accountId } = await createPersonAndAccount(10_000);
 
-    await http.post('/transactions/deposit').send({ accountId, value: 10 }).expect(201);
+    await http
+      .post('/transactions/deposit')
+      .send({ accountId, value: 10 })
+      .expect(201);
 
     await http
       .post('/transactions/withdraw')
@@ -113,18 +126,30 @@ describe('Account flows (integration)', () => {
     const http = request(app.getHttpServer());
     const { accountId } = await createPersonAndAccount(10_000);
 
-    await http.post('/transactions/deposit').send({ accountId, value: 5 }).expect(201);
+    await http
+      .post('/transactions/deposit')
+      .send({ accountId, value: 5 })
+      .expect(201);
     await http.patch(`/accounts/${accountId}/block`).expect(200);
 
-    await http.post('/transactions/deposit').send({ accountId, value: 1 }).expect(400);
+    await http
+      .post('/transactions/deposit')
+      .send({ accountId, value: 1 })
+      .expect(400);
   });
 
   it('statement: returns transactions; optional date filter', async () => {
     const http = request(app.getHttpServer());
     const { accountId } = await createPersonAndAccount(10_000);
 
-    await http.post('/transactions/deposit').send({ accountId, value: 100 }).expect(201);
-    await http.post('/transactions/withdraw').send({ accountId, value: 25 }).expect(201);
+    await http
+      .post('/transactions/deposit')
+      .send({ accountId, value: 100 })
+      .expect(201);
+    await http
+      .post('/transactions/withdraw')
+      .send({ accountId, value: 25 })
+      .expect(201);
 
     const all = await http
       .get(`/transactions/statement/${accountId}`)

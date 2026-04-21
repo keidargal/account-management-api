@@ -22,7 +22,7 @@ export class Account {
     accountType: number;
   }): Account {
     const dailyLimit = new Decimal(props.dailyWithdrawalLimit);
-    
+
     if (dailyLimit.isNegative()) {
       throw new DomainException('Daily withdrawal limit cannot be negative');
     }
@@ -95,12 +95,12 @@ export class Account {
     if (!this.isActive) {
       throw new DomainException('Cannot deposit into a blocked account');
     }
-    
+
     const depositAmount = new Decimal(amount);
     if (depositAmount.lte(0)) {
       throw new DomainException('Deposit amount must be greater than zero');
     }
-    
+
     this._balance = this._balance.plus(depositAmount);
   }
 
@@ -109,7 +109,10 @@ export class Account {
    * @param amount The amount to withdraw
    * @param totalWithdrawnToday The total amount already withdrawn today (queried by the Service)
    */
-  withdraw(amount: number | string | Decimal, totalWithdrawnToday: number | string | Decimal): void {
+  withdraw(
+    amount: number | string | Decimal,
+    totalWithdrawnToday: number | string | Decimal,
+  ): void {
     if (!this.isActive) {
       throw new DomainException('Cannot withdraw from a blocked account');
     }
@@ -128,7 +131,7 @@ export class Account {
     if (withdrawnToday.plus(withdrawAmount).gt(this._dailyWithdrawalLimit)) {
       throw new DomainException('Withdrawal amount exceeds daily limit');
     }
-    
+
     this._balance = this._balance.minus(withdrawAmount);
   }
 }

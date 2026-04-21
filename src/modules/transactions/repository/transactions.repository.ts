@@ -1,7 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../shared/infrastructure/prisma/prisma.service';
 import { Transaction } from '../entity/transaction.entity';
-import { Prisma, PrismaClient, Transaction as PrismaTransaction } from '@prisma/client';
+import {
+  Prisma,
+  PrismaClient,
+  Transaction as PrismaTransaction,
+} from '@prisma/client';
 import { Decimal } from 'decimal.js';
 import { DomainException } from '../../../shared/domain/domain.exception';
 import { Account } from '../../accounts/entity/account.entity';
@@ -55,7 +59,9 @@ export class TransactionsRepository {
       _sum: { value: true },
     });
 
-    const sum = result._sum.value ? new Decimal(result._sum.value) : new Decimal(0);
+    const sum = result._sum.value
+      ? new Decimal(result._sum.value)
+      : new Decimal(0);
     return sum.abs();
   }
 
@@ -64,11 +70,18 @@ export class TransactionsRepository {
    * Crucial for read-only reporting; authoritative enforcement happens in {@link executeFinancialOperation}.
    */
   async getTotalWithdrawnToday(accountId: number): Promise<Decimal> {
-    return this.sumWithdrawalsToday(this.prisma, accountId, this.startOfTodayUtc());
+    return this.sumWithdrawalsToday(
+      this.prisma,
+      accountId,
+      this.startOfTodayUtc(),
+    );
   }
 
   /** Serializes financial operations per account row (PostgreSQL). */
-  private async lockAccountForUpdate(tx: Prisma.TransactionClient, accountId: number): Promise<void> {
+  private async lockAccountForUpdate(
+    tx: Prisma.TransactionClient,
+    accountId: number,
+  ): Promise<void> {
     await tx.$queryRaw(
       Prisma.sql`
         SELECT 1 FROM "accounts" WHERE "accountId" = ${accountId} FOR UPDATE
@@ -79,14 +92,23 @@ export class TransactionsRepository {
   /**
    * Retrieves the statement (history of transactions) for an account within a date range.
    */
-  async getStatement(accountId: number, fromDate: Date, toDate: Date): Promise<Transaction[]> {
+  async getStatement(
+    accountId: number,
+    fromDate: Date,
+    toDate: Date,
+  ): Promise<Transaction[]> {
     // Ensure toDate includes the entire day (up to 23:59:59.999) in UTC
-    const endOfDayUTC = new Date(Date.UTC(
-      toDate.getUTCFullYear(),
-      toDate.getUTCMonth(),
-      toDate.getUTCDate(),
-      23, 59, 59, 999
-    ));
+    const endOfDayUTC = new Date(
+      Date.UTC(
+        toDate.getUTCFullYear(),
+        toDate.getUTCMonth(),
+        toDate.getUTCDate(),
+        23,
+        59,
+        59,
+        999,
+      ),
+    );
 
     const models = await this.prisma.transaction.findMany({
       where: {
@@ -108,7 +130,9 @@ export class TransactionsRepository {
    * Executes a financial operation (Deposit or Withdrawal) safely using an Interactive Database Transaction.
    * This guarantees ACID properties and prevents Race Conditions (e.g., overdrafts).
    */
-  async executeFinancialOperation(transaction: Transaction): Promise<Transaction> {
+  async executeFinancialOperation(
+    transaction: Transaction,
+  ): Promise<Transaction> {
     // Interactive Transaction ensures all read/write operations happen in an isolated, locked context
     return this.prisma.$transaction(async (tx) => {
       const startOfTodayUTC = this.startOfTodayUtc(new Date());
@@ -122,16 +146,24 @@ export class TransactionsRepository {
       });
 
       if (!currentAccount) {
-        throw new DomainException('Account not found during transaction execution');
+        throw new DomainException(
+          'Account not found during transaction execution',
+        );
       }
 
       if (!currentAccount.activeFlag) {
-        throw new DomainException('Account is blocked. Cannot execute transaction.');
+        throw new DomainException(
+          'Account is blocked. Cannot execute transaction.',
+        );
       }
 
       // 3. Withdrawals: recompute today's withdrawals inside this tx, then reuse Account domain rules
       if (transaction.isWithdrawal()) {
-        const withdrawnToday = await this.sumWithdrawalsToday(tx, transaction.accountId, startOfTodayUTC);
+        const withdrawnToday = await this.sumWithdrawalsToday(
+          tx,
+          transaction.accountId,
+          startOfTodayUTC,
+        );
         const domainAccount = Account.load({
           accountId: currentAccount.accountId,
           personId: currentAccount.personId,
@@ -152,13 +184,13 @@ export class TransactionsRepository {
           transactionDate: transaction.transactionDate,
         },
       });
-      
+
       // 5. Update the account balance RELATIVELY (Increment/Decrement)
       await tx.account.update({
         where: { accountId: transaction.accountId },
         data: {
           balance: {
-            increment: transaction.value, 
+            increment: transaction.value,
           },
         },
       });

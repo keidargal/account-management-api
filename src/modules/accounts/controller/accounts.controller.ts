@@ -1,4 +1,16 @@
-import { Controller, Post, Body, Get, Param, ParseIntPipe, Patch, HttpCode, HttpStatus, UseInterceptors, ClassSerializerInterceptor } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Get,
+  Param,
+  ParseIntPipe,
+  Patch,
+  HttpCode,
+  HttpStatus,
+  UseInterceptors,
+  ClassSerializerInterceptor,
+} from '@nestjs/common';
 import { AccountsService } from '../service/accounts.service';
 import { CreateAccountDto } from '../dto/create-account.dto';
 import { AccountResponseDto } from '../dto/account-response.dto';
@@ -13,7 +25,9 @@ export class AccountsController {
    */
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  async createAccount(@Body() createAccountDto: CreateAccountDto): Promise<AccountResponseDto> {
+  async createAccount(
+    @Body() createAccountDto: CreateAccountDto,
+  ): Promise<AccountResponseDto> {
     const account = await this.accountsService.createAccount({
       personId: createAccountDto.personId,
       dailyWithdrawalLimit: createAccountDto.dailyWithdrawalLimit,
@@ -29,7 +43,7 @@ export class AccountsController {
   @Get(':accountId/balance')
   async getBalance(@Param('accountId', ParseIntPipe) accountId: number) {
     const balance = await this.accountsService.getAccountBalance(accountId);
-    
+
     return {
       accountId,
       balance,
@@ -40,9 +54,11 @@ export class AccountsController {
    * Blocks a specific account
    */
   @Patch(':accountId/block')
-  async blockAccount(@Param('accountId', ParseIntPipe) accountId: number): Promise<AccountResponseDto> {
+  async blockAccount(
+    @Param('accountId', ParseIntPipe) accountId: number,
+  ): Promise<AccountResponseDto> {
     const account = await this.accountsService.blockAccount(accountId);
-    
+
     return new AccountResponseDto(account);
   }
 }

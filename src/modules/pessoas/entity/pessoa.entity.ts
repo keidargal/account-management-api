@@ -19,12 +19,7 @@ export class Pessoa {
   }): Pessoa {
     // The Document value object validates itself upon creation
     const documentVo = Document.create(props.document);
-    
-    return new Pessoa(
-      props.personId,
-      props.name,
-      documentVo,
-      props.birthDate,
-    );
+
+    return new Pessoa(props.personId, props.name, documentVo, props.birthDate);
   }
 }

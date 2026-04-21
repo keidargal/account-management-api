@@ -64,7 +64,9 @@ describe('Account management (e2e)', () => {
       .send({ accountId, value: 100 })
       .expect(201);
 
-    const balanceRes = await http.get(`/accounts/${accountId}/balance`).expect(200);
+    const balanceRes = await http
+      .get(`/accounts/${accountId}/balance`)
+      .expect(200);
     expect(balanceRes.body).toMatchObject({ accountId, balance: 100 });
 
     await http
@@ -88,7 +90,9 @@ describe('Account management (e2e)', () => {
     expect(Array.isArray(statementRes.body)).toBe(true);
     expect(statementRes.body.length).toBeGreaterThanOrEqual(2);
 
-    const blockRes = await http.patch(`/accounts/${accountId}/block`).expect(200);
+    const blockRes = await http
+      .patch(`/accounts/${accountId}/block`)
+      .expect(200);
     expect(blockRes.body.activeFlag).toBe(false);
 
     await http

@@ -68,13 +68,15 @@ describe('TransactionsService (Application)', () => {
         value: new Decimal(50),
         transactionDate: new Date(),
       });
-      transactionsRepository.executeFinancialOperation.mockResolvedValue(persisted);
+      transactionsRepository.executeFinancialOperation.mockResolvedValue(
+        persisted,
+      );
 
       const result = await service.deposit(1, 50);
 
-      expect(transactionsRepository.executeFinancialOperation).toHaveBeenCalledTimes(
-        1,
-      );
+      expect(
+        transactionsRepository.executeFinancialOperation,
+      ).toHaveBeenCalledTimes(1);
       expect(result.transactionId).toBe(9);
     });
   });
@@ -99,7 +101,9 @@ describe('TransactionsService (Application)', () => {
 
       await service.withdraw(1, 50);
 
-      expect(transactionsRepository.executeFinancialOperation).toHaveBeenCalledTimes(1);
+      expect(
+        transactionsRepository.executeFinancialOperation,
+      ).toHaveBeenCalledTimes(1);
     });
 
     it('should propagate DomainException when the repository rejects the withdrawal', async () => {
@@ -109,7 +113,9 @@ describe('TransactionsService (Application)', () => {
       );
 
       await expect(service.withdraw(1, 999)).rejects.toThrow(DomainException);
-      expect(transactionsRepository.executeFinancialOperation).toHaveBeenCalledTimes(1);
+      expect(
+        transactionsRepository.executeFinancialOperation,
+      ).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -143,7 +149,11 @@ describe('TransactionsService (Application)', () => {
       transactionsRepository.getStatement.mockResolvedValue(rows);
 
       await expect(service.getStatement(1, from, to)).resolves.toBe(rows);
-      expect(transactionsRepository.getStatement).toHaveBeenCalledWith(1, from, to);
+      expect(transactionsRepository.getStatement).toHaveBeenCalledWith(
+        1,
+        from,
+        to,
+      );
     });
   });
 });

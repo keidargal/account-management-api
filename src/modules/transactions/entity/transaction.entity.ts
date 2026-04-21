@@ -33,7 +33,7 @@ export class Transaction {
 
   /**
    * Factory method for creating a NEW WITHDRAWAL transaction.
-   * Enforces that the input amount is strictly positive, 
+   * Enforces that the input amount is strictly positive,
    * but stores it internally as a negative value.
    */
   static createWithdrawal(props: {

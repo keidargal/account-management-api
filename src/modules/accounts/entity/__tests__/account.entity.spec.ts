@@ -88,7 +88,10 @@ describe('Account Entity (Domain)', () => {
         dailyWithdrawalLimit: 1000,
         accountType: 1,
       });
-      expectDomainException(() => account.deposit(amount), 'Deposit amount must be greater than zero');
+      expectDomainException(
+        () => account.deposit(amount),
+        'Deposit amount must be greater than zero',
+      );
     });
 
     it('should reject deposit into a blocked account', () => {
@@ -155,7 +158,10 @@ describe('Account Entity (Domain)', () => {
         dailyWithdrawalLimit: new Decimal(500),
       });
 
-      expectDomainException(() => account.withdraw(150, 0), 'Insufficient balance');
+      expectDomainException(
+        () => account.withdraw(150, 0),
+        'Insufficient balance',
+      );
     });
 
     it('should throw when a single withdrawal exceeds the daily limit', () => {
@@ -224,7 +230,10 @@ describe('Account Entity (Domain)', () => {
       });
       account.block();
 
-      expectDomainException(() => account.block(), 'Account is already blocked');
+      expectDomainException(
+        () => account.block(),
+        'Account is already blocked',
+      );
     });
   });
 });

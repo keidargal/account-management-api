@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { TransactionsRepository } from '../repository/transactions.repository';
 import { AccountsRepository } from '../../accounts/repository/accounts.repository';
 import { Transaction } from '../entity/transaction.entity';
@@ -58,7 +62,11 @@ export class TransactionsService {
   /**
    * Use Case: Get Account Statement (Transactions by period)
    */
-  async getStatement(accountId: number, fromDate: Date, toDate: Date): Promise<Transaction[]> {
+  async getStatement(
+    accountId: number,
+    fromDate: Date,
+    toDate: Date,
+  ): Promise<Transaction[]> {
     // 1. Ensure the account exists before querying its statement
     await this.getAccountOrThrow(accountId);
 
@@ -68,6 +76,10 @@ export class TransactionsService {
     }
 
     // 3. Fetch the statement from the repository
-    return this.transactionsRepository.getStatement(accountId, fromDate, toDate);
+    return this.transactionsRepository.getStatement(
+      accountId,
+      fromDate,
+      toDate,
+    );
   }
 }

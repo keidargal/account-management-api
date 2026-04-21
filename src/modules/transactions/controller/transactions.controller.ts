@@ -1,4 +1,16 @@
-import { Controller, Post, Body, Get, Param, ParseIntPipe, Query, HttpCode, HttpStatus, UseInterceptors, ClassSerializerInterceptor } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Get,
+  Param,
+  ParseIntPipe,
+  Query,
+  HttpCode,
+  HttpStatus,
+  UseInterceptors,
+  ClassSerializerInterceptor,
+} from '@nestjs/common';
 import { TransactionsService } from '../service/transactions.service';
 import { CreateTransactionDto } from '../dto/create-transaction.dto';
 import { StatementQueryDto } from '../dto/statement-query.dto';
@@ -14,8 +26,13 @@ export class TransactionsController {
    */
   @Post('deposit')
   @HttpCode(HttpStatus.CREATED)
-  async deposit(@Body() dto: CreateTransactionDto): Promise<TransactionResponseDto> {
-    const transaction = await this.transactionsService.deposit(dto.accountId, dto.value);
+  async deposit(
+    @Body() dto: CreateTransactionDto,
+  ): Promise<TransactionResponseDto> {
+    const transaction = await this.transactionsService.deposit(
+      dto.accountId,
+      dto.value,
+    );
     return new TransactionResponseDto(transaction);
   }
 
@@ -24,8 +41,13 @@ export class TransactionsController {
    */
   @Post('withdraw')
   @HttpCode(HttpStatus.CREATED)
-  async withdraw(@Body() dto: CreateTransactionDto): Promise<TransactionResponseDto> {
-    const transaction = await this.transactionsService.withdraw(dto.accountId, dto.value);
+  async withdraw(
+    @Body() dto: CreateTransactionDto,
+  ): Promise<TransactionResponseDto> {
+    const transaction = await this.transactionsService.withdraw(
+      dto.accountId,
+      dto.value,
+    );
     return new TransactionResponseDto(transaction);
   }
 
@@ -39,7 +61,7 @@ export class TransactionsController {
   ): Promise<TransactionResponseDto[]> {
     // Default to a very old date (Unix Epoch) if fromDate is not provided
     const fromDate = query.fromDate ? new Date(query.fromDate) : new Date(0);
-    
+
     // Default to current date/time if toDate is not provided
     const toDate = query.toDate ? new Date(query.toDate) : new Date();
 

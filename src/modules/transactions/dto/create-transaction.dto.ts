@@ -1,4 +1,4 @@
-import { IsInt, IsPositive, IsNumber, Min } from 'class-validator';
+import { IsInt, IsPositive, IsNumber } from 'class-validator';
 
 export class CreateTransactionDto {
   @IsInt()

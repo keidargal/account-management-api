@@ -1,11 +1,11 @@
-import { IsInt, IsPositive, Min } from 'class-validator';
+import { IsInt, IsPositive, Min, IsNumber } from 'class-validator';
 
 export class CreateAccountDto {
   @IsInt()
   @IsPositive()
   personId: number;
 
-  @IsInt()
+  @IsNumber({ maxDecimalPlaces: 4 })
   @Min(0)
   dailyWithdrawalLimit: number;
 

@@ -8,7 +8,7 @@ export class AccountsService {
   constructor(
     private readonly accountsRepository: AccountsRepository,
     // Injecting PessoasService to validate if a person exists before creating an account
-    private readonly pessoasService: PessoasService, 
+    private readonly pessoasService: PessoasService,
   ) {}
 
   /**
@@ -26,7 +26,11 @@ export class AccountsService {
   /**
    * Use Case: Create a new Account
    */
-  async createAccount(data: { personId: number; dailyWithdrawalLimit: number; accountType: number }): Promise<Account> {
+  async createAccount(data: {
+    personId: number;
+    dailyWithdrawalLimit: number;
+    accountType: number;
+  }): Promise<Account> {
     // 1. Cross-module validation: Ensure the Pessoa exists using the optimized check
     const personExists = await this.pessoasService.checkIfExists(data.personId);
     if (!personExists) {
@@ -34,7 +38,7 @@ export class AccountsService {
     }
 
     // 2. Create the Domain Entity
-    // We don't need a try-catch here anymore because DomainException 
+    // We don't need a try-catch here anymore because DomainException
     // is automatically handled by the GlobalExceptionFilter!
     const accountEntity = Account.createNew({
       personId: data.personId,
@@ -51,7 +55,7 @@ export class AccountsService {
    */
   async getAccountBalance(accountId: number): Promise<number> {
     const account = await this.getAccountOrThrow(accountId);
-    
+
     // Convert Decimal to standard JavaScript number for the API response
     return account.balance.toNumber();
   }
@@ -62,9 +66,9 @@ export class AccountsService {
   async blockAccount(accountId: number): Promise<Account> {
     // 1. Fetch the entity using our helper
     const account = await this.getAccountOrThrow(accountId);
-    
+
     // 2. Delegate the business logic to the Rich Domain Model
-    // We don't need a try-catch here anymore because DomainException 
+    // We don't need a try-catch here anymore because DomainException
     // is automatically handled by the GlobalExceptionFilter!
     account.block();
 
